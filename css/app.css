@@ -1,0 +1,171 @@
+:root{
+  --bg:#EEF1F4;--surface:#FFFFFF;--ink:#1B2430;--muted:#5A6878;--line:#D3DAE2;
+  --brand:#B3121F;--brand-ink:#FFFFFF;--steel:#2C5878;--steel-soft:#E3ECF3;
+  --ok:#22704A;--ok-bg:#E5F3EB;--warn:#8A4A04;--warn-bg:#FFF2DE;--err:#A3141C;--err-bg:#FCE8E9;
+  --paper:#FFFFFF;--paper-ink:#141A22;--paper-line:#9AA5B1;--focus:#2F7BD8;--line-strong:#7A8796;--steel-ink:#FFFFFF;color-scheme:light;
+  /* Token antarmuka (bukan naskah): jarak skala 4/8 px (alphagov/govuk-frontend, uswds), 7 ukuran huruf (fluentui type ramp),
+     satu tinggi kontrol untuk tombol & isian, radius dan bayangan seragam. Naskah (.sheet) dan cetak memakai nilainya sendiri. */
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s8:32px;
+  --t1:12px;--t2:13px;--t3:14px;--t4:15px;--t5:16px;--t6:18px;--t7:20px;
+  --kontrol:36px;--kontrol-kecil:28px;--r1:4px;--r2:6px;--r3:10px;--bayang:0 2px 8px rgba(0,0,0,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#10161D;--surface:#18212B;--ink:#E5EBF1;--muted:#9AA8B8;--line:#2B3846;--brand:#E0525B;--brand-ink:#10161D;
+    --steel:#86B6DA;--steel-soft:#1E2F3E;--ok:#6FCB98;--ok-bg:#16302A;--warn:#F2BE74;--warn-bg:#332611;--err:#F08A90;--err-bg:#3A1C1F;
+    --paper:#F4F6F8;--paper-ink:#141A22;--focus:#8CC2F5;--line-strong:#6B7A8C;--steel-ink:#10161D;color-scheme:dark}
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-padding-top:130px;scrollbar-gutter:stable} /* lompatan tidak tertutup header; lebar gulir dicadangkan agar tata letak tidak melompat */
+body{margin:0;background:var(--bg);color:var(--ink);font:var(--t4)/1.5 "Segoe UI",system-ui,Roboto,sans-serif}
+/* Font antarmuka layar: tumpukan font sistem GitHub Primer (primer/primitives: src/tokens/functional/typography/font-stack.json5,
+   fontStack.system tanpa 'Mona Sans VF' dan 'Noto Sans Backtick Fix' yang tidak terpasang di Windows; fontStack.monospace persis).
+   Tanpa unduhan font. Hanya @media screen: naskah (.sheetwrap/.sheet/.kontrak), cetak, dan DOCX tetap memakai font semula. */
+@media screen{
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"}
+  code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
+  .sheetwrap{font-family:"Segoe UI",system-ui,Roboto,sans-serif} /* lembar naskah tetap memakai font aslinya */
+}
+/* Isi dirender oleh skrip setelah dimuat: disembunyikan sampai render pertama selesai (app.js menghapus .memuat) agar tidak
+   ada pergeseran tata letak (CLS). Header tetap tampil sejak awal. */
+body.memuat main{visibility:hidden}
+header.top{background:var(--surface);border-bottom:3px solid var(--brand);padding:var(--s3) var(--s5);display:flex;flex-wrap:wrap;gap:var(--s2) var(--s6);align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20;box-shadow:var(--bayang)} /* menu utama tetap terlihat saat halaman digulir */
+@media (max-height:600px){header.top{position:static}} /* layar sangat pendek: header ikut digulir agar isi tidak terdesak */
+.brand{display:grid;gap:2px;min-width:0}
+.brand h1{margin:0;font-size:var(--t7);line-height:1.25}
+.brand p{margin:0;color:var(--muted);font-size:var(--t2);line-height:1.45;max-width:70ch}
+.brand #simpanInfo{min-height:1.45em} /* baris status dicadangkan sejak awal: teks "n kontrak di database" tidak menggeser isi */
+.tabs{display:flex;flex-wrap:wrap;gap:var(--s1)}
+.tabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r2);padding:0 var(--s3);min-height:var(--kontrol);font:inherit;font-size:var(--t3);font-weight:600;cursor:pointer}
+.tabs button:hover{border-color:var(--steel);background:var(--steel-soft)}
+.tabs button[aria-selected="true"]{background:var(--steel);border-color:var(--steel);color:var(--steel-ink)}
+.muted{color:var(--muted);font-size:var(--t2)}
+main{padding:var(--s4) var(--s5)}
+.panel h2,.kunci h2{font-size:var(--t6);line-height:1.3;margin:0 0 var(--s3)}
+.panel h3{font-size:var(--t5);line-height:1.3}
+.layout{display:grid;grid-template-columns:minmax(320px,430px) minmax(0,1fr);gap:var(--s5);max-width:1600px;margin:0 auto}
+@media (max-width:980px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r3)}
+.pad{padding:var(--s4) var(--s5)}
+.narrow{max-width:980px;margin:0 auto}
+.form{align-self:start}
+.pick{padding:var(--s4) var(--s5);border-bottom:1px solid var(--line);display:grid;gap:var(--s2)}
+details.sec{border-bottom:1px solid var(--line)}
+details.sec:last-child{border-bottom:0}
+details.sec>summary{cursor:pointer;list-style:none;padding:var(--s3) var(--s5);min-height:44px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"+";color:var(--muted)}
+details.sec[open]>summary::after{content:"–"}
+details.sec .body{padding:0 var(--s5) var(--s4);display:grid;gap:var(--s3)}
+label.f{display:grid;gap:var(--s1);font-size:var(--t2);font-weight:500}
+label.f.inline{display:inline-flex;align-items:center;gap:var(--s2)}
+label.f small{color:var(--muted);font-weight:400}
+.tag{font-size:var(--t1);color:var(--steel);border:1px solid var(--steel);border-radius:var(--r1);padding:0 var(--s1);margin-left:var(--s1);font-weight:400}
+input,select,textarea{font:inherit;font-size:var(--t3);color:var(--ink);background:var(--bg);border:1px solid var(--line-strong);border-radius:var(--r2);padding:0 var(--s2);min-height:var(--kontrol);width:100%}
+textarea{min-height:64px;padding:var(--s2);resize:vertical;line-height:1.45}
+input:hover,select:hover,textarea:hover{border-color:var(--steel)}
+input[type=checkbox],input[type=radio]{width:18px;height:18px;min-height:0;margin:0;accent-color:var(--steel)}
+label.f.inline select{width:auto}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+input[type=date]:focus-within{outline:3px solid var(--focus);outline-offset:2px} /* ikon kalender adalah perhentian Tab tersendiri di dalam kontrol */
+.side{display:grid;gap:var(--s4);align-content:start;min-width:0}
+.bar{padding:var(--s3) var(--s4);display:grid;gap:var(--s3)}
+.actions{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+button{font:inherit;font-weight:600;font-size:var(--t3);line-height:1.2;border-radius:var(--r2);padding:0 var(--s4);min-height:var(--kontrol);cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button:hover{border-color:var(--steel)}
+button.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+button.primary:hover{filter:brightness(.92)}
+button:disabled,button:disabled:hover{opacity:.55;cursor:not-allowed;filter:none;border-color:var(--line)}
+button.danger{color:var(--err);border-color:var(--err)}
+button.small{padding:0 var(--s2);font-size:var(--t2);min-height:var(--kontrol-kecil);min-width:var(--kontrol-kecil)}
+.note{font-size:var(--t2);line-height:1.45;color:var(--muted);margin:0}
+.note.err{color:var(--err)}
+#editInfo{min-height:1.45em} /* baris status penyuntingan dicadangkan */
+.checks{display:grid;gap:var(--s2);max-height:300px;overflow-y:auto;padding-right:var(--s1)}
+.chk{padding:var(--s2) var(--s3);border-radius:var(--r2);font-size:var(--t2);line-height:1.45;border-left:4px solid}
+.chk.ok{background:var(--ok-bg);border-color:var(--ok)}
+.chk.warn{background:var(--warn-bg);border-color:var(--warn)}
+.chk.err{background:var(--err-bg);border-color:var(--err)}
+.chk.info{background:var(--steel-soft);border-color:var(--steel)}
+.row{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:var(--s3)}
+.row input{flex:1 1 260px}.row select{width:auto;max-width:100%;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin:var(--s3) 0}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}}
+.tablewrap{overflow-x:auto}
+.tablewrap:focus-visible{outline-offset:0}
+table.list{border-collapse:collapse;width:100%;font-size:var(--t2);font-variant-numeric:tabular-nums}
+table.list th,table.list td{border-bottom:1px solid var(--line);padding:var(--s2);text-align:left;vertical-align:top}
+table.list th{color:var(--muted);font-weight:600}
+#tabelDb th:nth-child(6),#tabelDb td:nth-child(6){text-align:right} /* kolom nilai/upah: angka rata kanan */
+.badge{display:inline-block;font-size:var(--t1);line-height:1.5;border-radius:var(--r3);padding:0 var(--s2);border:1px solid var(--line)}
+.badge.warn{background:var(--warn-bg);border-color:var(--warn)}
+.badge.err{background:var(--err-bg);border-color:var(--err)}
+.badge.disusun{background:var(--warn-bg);border-color:var(--warn)}
+/* lembar naskah */
+.sheetwrap{overflow-x:auto;padding:20px;background:var(--steel-soft);border-radius:10px}
+.sheet{background:var(--paper);color:var(--paper-ink);max-width:800px;margin:0 auto;padding:52px 60px;box-shadow:0 10px 30px -18px rgba(0,0,0,.45);font:14.5px/1.55 Arial,Helvetica,sans-serif}
+@media (max-width:600px){.sheet{padding:24px 16px}}
+.sheet p{margin:0 0 6px}
+.sheet .j{text-align:justify}
+.sheet .c{text-align:center;white-space:pre-line}
+.sheet .hc{text-align:center;font-weight:700;margin:12px 0 2px}
+.sheet h3{font-size:1em;margin:12px 0 4px}
+.sheet .li{display:grid;grid-template-columns:2.2em 1fr;margin:0 0 4px;text-align:justify}
+.sheet .li.l2{margin-left:2.2em}
+.sheet table{border-collapse:collapse;margin:4px 0 10px}
+.sheet table.kv{margin-left:2.2em}.sheet table.kv.n{margin-left:0}.sheet table.kv.n td:first-child{width:2.2em}.sheet table.kv td{padding:1px 6px 1px 0;vertical-align:top}
+.sheet table.grid{width:100%;font-size:.92em}
+.sheet table.grid td,.sheet table.grid th{border:1px solid var(--paper-line);padding:4px 6px;vertical-align:top;text-align:left}
+.sheet table.sign{width:100%;margin-top:14px}.sheet table.sign td{text-align:center;vertical-align:top;width:50%}
+.sheet table.sign .gap{height:70px}
+.sheet table.paraf{margin:22px 0 0 auto;font:12px "Times New Roman",serif}
+.sheet table.paraf th,.sheet table.paraf td{border:1px solid var(--paper-line);padding:3px 10px;text-align:center;font-weight:400;min-width:90px}
+.sheet table.paraf td{height:34px}
+.sheet .adj{background:#E1EEFF;box-shadow:inset 3px 0 0 #3D7BD1;padding-left:4px}
+.sheet .ph{background:#FFF1B8;padding:0 2px;border-radius:2px}
+.sheet hr.pb{border:0;border-top:1px dashed var(--paper-line);margin:24px 0}
+.kunci{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:30}
+.kunci .panel{width:min(420px,92vw);display:grid;gap:10px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:9px 15px;border-radius:8px;font-size:.88rem;display:none;z-index:40;max-width:90vw}
+.sumber h2{margin-top:0}.sumber h3{margin:18px 0 6px}.sumber li{margin-bottom:4px}
+@media print{
+  header.top,.form,.bar,.checkspanel,.toast,.kunci,#tab-db,#tab-profil,#tab-sumber,#tab-aman{display:none!important}
+  body{background:#fff}main{padding:0}.layout{display:block}.sheetwrap{padding:0;background:#fff}
+  .sheet{box-shadow:none;max-width:none;padding:0;color:#000;font-size:12pt}
+  .sheet .adj{background:none;box-shadow:none;padding-left:0}.sheet .ph{background:none}
+  .sheet table.paraf{break-inside:avoid}
+  @page{size:A4;margin:2cm 2.3cm 2.5cm 2.9cm}
+}
+.kunci{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:30}
+.kunci .panel{width:min(420px,92vw);display:grid;gap:var(--s3)}
+.toast{position:fixed;left:50%;bottom:var(--s5);transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:var(--s2) var(--s4);border-radius:var(--r2);font-size:var(--t3);display:none;z-index:40;max-width:90vw}
+.sumber{max-width:80ch}.sumber h3{margin:var(--s5) 0 var(--s2)}.sumber li{margin-bottom:var(--s1)}
+label.tombol{display:inline-flex;align-items:center;position:relative;min-height:var(--kontrol);border:1px solid var(--line);border-radius:var(--r2);padding:0 var(--s3);cursor:pointer;font-weight:600;font-size:var(--t3);background:var(--surface)}
+label.tombol:hover{border-color:var(--steel)}
+/* pemilih berkas: input disembunyikan secara visual tetapi tetap dapat dijangkau papan ketik; labelnya menampilkan fokus */
+label.tombol>input[type=file][hidden]{display:block!important;position:absolute;inset:0;width:1px;height:1px;min-height:0;opacity:0;overflow:hidden;clip-path:inset(50%)}
+label.tombol:has(>input:focus-visible){outline:3px solid var(--focus);outline-offset:2px}
+.lamp-item{display:flex;gap:var(--s2);align-items:center;margin-top:var(--s2)}.lamp-item img{height:60px;width:auto;aspect-ratio:4/3;object-fit:contain;border:1px solid var(--line);background:#fff}.lamp-item input{flex:1}
+.riwayat{margin-top:var(--s4);border-top:1px solid var(--line);padding-top:var(--s3)}.riwayat h3{margin:0 0 var(--s2);font-size:var(--t5)}.riwayat code{font-size:var(--t1)}
+.pindai{margin-bottom:var(--s4)}.pindai summary{cursor:pointer;padding:var(--s1) 0;min-height:var(--kontrol-kecil)}.pindai .actions{margin:var(--s3) 0}
+.pindai-detail td{background:var(--bg)}.pindai-detail table{width:100%}.pindai-detail input{min-width:180px}
+.kutip{font-size:var(--t1);color:var(--muted);max-width:520px}
+/* layar sempit: header menu ringkas (satu baris, dapat digeser) agar tetap di atas tanpa menutupi isi */
+@media (max-width:760px){
+  header.top{padding:var(--s2) var(--s3);gap:var(--s2)}
+  .brand p,#simpanInfo{display:none}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:thin}
+  .tabs button{white-space:nowrap;flex:0 0 auto}
+  main{padding:var(--s3)}
+  .pad{padding:var(--s4) var(--s3)}
+  .pick,details.sec>summary{padding-left:var(--s3);padding-right:var(--s3)}
+  details.sec .body{padding:0 var(--s3) var(--s4)}
+  .sheetwrap{padding:var(--s3)}
+  html{scroll-padding-top:100px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+/* lembar mendatar (analisa komparasi vendor): di luar blok naskah/cetak yang dikunci, berlaku hanya untuk .sheet.lanskap */
+.sheet.lanskap{max-width:1120px}.sheet.lanskap table.grid{font-size:.82em}.sheet.lanskap table.grid td,.sheet.lanskap table.grid th{padding:3px 4px}
+@media print{body:has(.sheet.lanskap){page:lanskap}.sheet.lanskap{font-size:9pt}@page lanskap{size:A4 landscape;margin:1.5cm}} /* seluruh dokumen ikut halaman mendatar: tanpa halaman kosong tegak di akhir */
+.unggah{display:grid;gap:var(--s2)}.unggah .actions{margin:0}.unggah p.note{margin:0}.ph-daftar{margin:var(--s2) 0 0;padding-left:1.2em;max-height:12rem;overflow:auto;font-size:.875rem}

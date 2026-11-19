@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' blob: https://www.gstatic.com https://apis.google.com; style-src 'self' blob:; img-src 'self' data: blob:; connect-src https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src https://kontrak-iw-online.firebaseapp.com; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Aplikasi Kontrak</title>
+<meta name="description" content="Aplikasi luring untuk menyusun dan menyimpan perjanjian kerja serta perjanjian sewa rumah, kamar kos, kendaraan, dan peralatan; data hanya tersimpan di komputer ini.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/online.css">
+</head>
+<body class="memuat online-terkunci">
+<section class="gerbang panel" id="gerbang" aria-live="polite"><h1>Aplikasi Kontrak</h1><p id="gerbangPesan" class="note">Memeriksa sesi…</p><div class="actions"><button class="primary" id="gerbangMasuk" type="button" hidden>Masuk dengan Google</button><button id="gerbangKeluar" type="button" hidden>Keluar</button></div></section>
+<header class="top">
+  <div class="brand">
+    <h1>Aplikasi Kontrak</h1>
+    <p>Perjanjian kerja dan perjanjian sewa rumah, kamar kos, kendaraan, peralatan. Wajib masuk; data kontrak tersimpan hanya di peramban ini.</p>
+    <p id="simpanInfo" class="muted" aria-live="polite"></p>
+    <p id="onlineAkun" class="muted"></p>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="buat" aria-selected="true">Buat kontrak</button>
+    <button role="tab" data-tab="db">Database</button>
+    <button role="tab" data-tab="profil">Profil proyek</button>
+    <button role="tab" data-tab="sumber">Sumber &amp; dasar hukum</button>
+    <button role="tab" data-tab="aman">Keamanan &amp; cadangan</button>
+  </nav>
+</header>
+
+<main>
+  <section id="tab-buat" class="tab">
+    <div class="layout">
+      <aside class="panel form">
+        <div class="pick">
+          <label class="f">Jenis kontrak
+            <select id="tpl"></select>
+          </label>
+          <p class="note" id="tplSumber"></p>
+          <div id="unggahHost" class="unggah"></div>
+        </div>
+        <div id="formHost"></div>
+      </aside>
+      <div class="side">
+        <div class="panel bar">
+          <div class="actions">
+            <button class="primary" id="btnSimpan" type="button">Simpan ke database</button>
+            <button id="btnBaru" type="button">Kontrak baru</button>
+            <button id="btnDuplikat" type="button">Simpan sebagai salinan</button>
+            <button id="btnDocx" type="button">Unduh Word</button>
+            <button id="btnCetak" type="button">Cetak / PDF</button>
+            <label class="f inline">Status
+              <select id="status"><option>Draf</option><option>Final</option><option>Ditandatangani</option><option>Berakhir</option><option>Batal</option></select>
+            </label>
+          </div>
+          <p class="note" id="editInfo"></p>
+          <p class="note">Kuning: belum diisi, tercetak sebagai [•]. Biru: penyesuaian wajib undang-undang atas naskah induk (alasan tampil saat kursor diarahkan dan di panel pemeriksaan). Penanda warna tidak ikut tercetak.</p>
+        </div>
+        <div class="panel bar checkspanel" aria-live="polite">
+          <strong>Pemeriksaan keabsahan &amp; kepatuhan</strong>
+          <div class="checks" id="checks" tabindex="0" role="region" aria-label="Hasil pemeriksaan"></div>
+        </div>
+        <div class="sheetwrap"><article class="sheet" id="sheet"></article></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-db" class="tab" hidden>
+    <details class="panel pad pindai" id="pindaiPanel">
+      <summary><b>Pindai kontrak massal</b> — impor kontrak lama (PDF, DOCX, TXT hasil OCR, atau lembar isian .json dari agen) ke database</summary>
+      <p class="note">PDF ber-teks, DOCX, dan lembar isian .json dari agen pengisi-kontrak dibaca langsung. PDF hasil scan atau foto: seret dulu ke <b>Pindai OCR.bat</b> (folder aplikasi), lalu pilih berkas .txt hasilnya dari Dokumen\Aplikasi Kontrak\Hasil OCR. Isian yang tidak ditemukan dibiarkan kosong; tinjau setiap baris sebelum menyimpan. Berkas asli tidak disimpan — hanya nama dan sidik SHA-256-nya.</p>
+      <div class="actions">
+        <label class="tombol">Pilih berkas…<input type="file" id="pindaiBerkas" multiple accept=".pdf,.docx,.txt,.json" hidden></label>
+        <label class="tombol">Pilih folder…<input type="file" id="pindaiFolder" webkitdirectory multiple hidden></label>
+        <label class="f inline">Status saat disimpan <select id="pindaiStatus"><option>Ditandatangani</option><option>Final</option><option>Draf</option><option>Berakhir</option></select></label>
+        <button class="primary" id="pindaiSimpan" type="button" disabled>Simpan terpilih ke database</button>
+      </div>
+      <p class="note" id="pindaiInfo" aria-live="polite"></p>
+      <div class="tablewrap" tabindex="0" role="region" aria-label="Hasil pindai"><table class="list" id="pindaiTabel"></table></div>
+    </details>
+    <div class="panel pad">
+      <div class="row">
+        <input id="cari" type="search" placeholder="Cari nama pihak, objek, nomor…" aria-label="Cari kontrak">
+        <select id="filterJenis" aria-label="Saring jenis"><option value="">Semua jenis</option></select>
+        <select id="filterStatus" aria-label="Saring status"><option value="">Semua status</option><option>Draf</option><option>Final</option><option>Ditandatangani</option><option>Berakhir</option><option>Batal</option></select>
+        <button id="btnEksporCsv" type="button" title="Daftar kontrak sesuai saringan, tanpa NIK, upah rinci, dan lampiran">Ekspor daftar (CSV)</button>
+      </div>
+      <div id="ringkasDb" class="muted"></div>
+      <div class="tablewrap" tabindex="0" role="region" aria-label="Daftar kontrak"><table class="list" id="tabelDb"></table></div>
+      <div id="riwayatHost" class="riwayat" hidden></div>
+    </div>
+  </section>
+
+  <section id="tab-profil" class="tab" hidden>
+    <div class="panel pad narrow">
+      <h2>Profil proyek / unit kerja</h2>
+      <p class="note">Diisikan otomatis ke kolom bertanda "profil" pada setiap kontrak baru. Isi sesuai surat penugasan dan surat kuasa yang berlaku.</p>
+      <div id="profilForm" class="grid2"></div>
+      <div class="actions"><button class="primary" id="btnProfil" type="button">Simpan profil</button></div>
+    </div>
+  </section>
+
+  <section id="tab-sumber" class="tab" hidden>
+    <div class="panel pad narrow" id="sumberHost"></div>
+  </section>
+
+  <section id="tab-aman" class="tab" hidden>
+    <div class="panel pad narrow" id="amanHost"></div>
+  </section>
+</main>
+
+<div id="kunci" class="kunci" hidden>
+  <div class="panel pad">
+    <h2>Data terkunci</h2>
+    <p class="note" id="kunciPesan">Masukkan kata sandi untuk membuka database kontrak.</p>
+    <input id="kunciPw" type="password" autocomplete="current-password" aria-label="Kata sandi">
+    <div class="actions"><button class="primary" id="kunciBuka" type="button">Buka</button></div>
+    <p class="note err" id="kunciErr"></p>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/util.js"></script>
+<script src="js/html.js"></script>
+<script src="js/templat-unggah.js"></script>
+<script src="js/render.js"></script>
+<script src="js/riwayat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/konfigurasi-online.js"></script>
+<script type="module" src="js/online.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+/* Gerbang versi online: kepala & isi aplikasi disembunyikan sampai login + konten terverifikasi termuat. */
+body.online-terkunci > header.top, body.online-terkunci > main { display: none }
+.gerbang { max-width: 44rem; margin: 8vh auto; padding: 0 var(--s4); display: grid; gap: var(--s4) }
+.gerbang h1 { margin: 0 }
+.gerbang .admin-online { padding: var(--s4) var(--s5); display: grid; gap: var(--s3) }
+#onlineAkun { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap }
