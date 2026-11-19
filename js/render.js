@@ -44,13 +44,18 @@ window.RENDER = (function () {
     for (let i = 0; i < t.length; i++) if (takSahXml(t.charCodeAt(i))) { o += t.slice(awal, i); awal = i + 1; }
     return awal ? o + t.slice(awal) : t;
   };
+  // penanda format satu segmen: **tebal**, __garis bawah__ (juga tebal), *miring* (hanya bila tidak tebal/bergaris)
+  function gaya(seg, tebal) {
+    let t = seg, b = tebal, u = false, it = false;
+    if (/^\*\*.+\*\*$/.test(t)) { b = true; t = t.slice(2, -2); }
+    if (/^__.+__$/.test(t)) { u = true; t = t.slice(2, -2); }
+    if (!b && !u && /^\*[^*]+\*$/.test(t)) { it = true; t = t.slice(1, -1); }
+    return { t, rpr: `${b || u ? '<w:b/>' : ''}${it ? '<w:i/>' : ''}${u ? '<w:u w:val="single"/>' : ''}` };
+  }
   function runs(s, o = {}) {
     return xmlAman(s).split(/(\*\*.+?\*\*|__.+?__|\*[^*]+?\*)/g).filter(Boolean).map(seg => {
-      let t = seg, b = !!o.bold, u = false, it = false;
-      if (/^\*\*.+\*\*$/.test(t)) { b = true; t = t.slice(2, -2); }
-      if (/^__.+__$/.test(t)) { u = true; t = t.slice(2, -2); }
-      if (!b && !u && /^\*[^*]+\*$/.test(t)) { it = true; t = t.slice(1, -1); }
-      const dasar = `${b || u ? '<w:b/>' : ''}${it ? '<w:i/>' : ''}${u ? '<w:u w:val="single"/>' : ''}${o.size ? `<w:sz w:val="${o.size}"/>` : ''}`;
+      const g = gaya(seg, !!o.bold), t = g.t;
+      const dasar = g.rpr + (o.size ? `<w:sz w:val="${o.size}"/>` : '');
       const run = (txt, sorot) => {
         const rpr = dasar + (sorot ? '<w:highlight w:val="yellow"/>' : '');
         return `<w:r>${rpr ? `<w:rPr>${rpr}</w:rPr>` : ''}<w:t xml:space="preserve">${xe(txt)}</w:t></w:r>`;

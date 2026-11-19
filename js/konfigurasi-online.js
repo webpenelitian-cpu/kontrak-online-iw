@@ -36,7 +36,7 @@ window.KONTRAK_ONLINE = {
   {
    "id": "ddd81f97610423bf6c10",
    "jenis": "js",
-   "sha256": "26a4bb5fbab84da17430ce3cc5d472d1b6e24c78fa8b4e938bc607def64afc9d",
+   "sha256": "3ba88d537b6907dacbed8c3a653cefc673fb4d91b47be2e8fcfc3fd23beeaf44",
    "awal": true
   },
   {
@@ -60,13 +60,13 @@ window.KONTRAK_ONLINE = {
   {
    "id": "b5c2f9f3048ec498e3d5",
    "jenis": "js",
-   "sha256": "3e95420a9cd1b2ce36caab42f5dc9fb321661cf444e73b78d65c0df490a06ba2",
+   "sha256": "921787453fc02c76dd14ab2a90cfc0abed59ed3c80606d96187bc7faa18b8864",
    "awal": true
   },
   {
    "id": "562d66f809d205874636",
    "jenis": "js",
-   "sha256": "f5e28643943be09accbba785b50a722d9fcf241c380e58ab7248a19261e197a9",
+   "sha256": "911dcd920691cef1830c2982b84f16d05aeb6a95f7b6c61be3ad1f18dab0af24",
    "awal": true
   },
   {
@@ -78,7 +78,7 @@ window.KONTRAK_ONLINE = {
   {
    "id": "0d3607ed50d634bc25e2",
    "jenis": "js",
-   "sha256": "09c50e41731292e0ec3fc74acaaeb31544debdf8016344903fe845ba84d51005",
+   "sha256": "9c109db8d36ada0e1b7fad0fff2c82721ecd457286b5b57dcc47b42de5ee16b0",
    "awal": true
   },
   {

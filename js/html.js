@@ -27,19 +27,20 @@ window.H = (function () {
     if (c) return c;
     // hanya array string templat bertanda asli (beku, punya .raw): teks dinamis tidak bisa menyamar sebagai bagian statis
     if (!Object.isFrozen(s) || !Array.isArray(s.raw)) throw new TypeError('html`` hanya untuk templat bertanda');
-    const statis = [...s], jenis = [], nama = [];
+    c = { statis: [...s], jenis: [], nama: [] };
     let lalu = '';
-    for (let i = 0; i < s.length - 1; i++) {
-      lalu += statis[i];
-      const b = statis[i].match(/\s\?([a-z-]+)="$/);
-      if (b && statis[i + 1][0] === '"') {
-        jenis.push(BOOL); nama.push(b[1]);
-        statis[i] = statis[i].slice(0, -b[0].length); statis[i + 1] = statis[i + 1].slice(1);
-      } else { jenis.push(lalu.lastIndexOf('<') > lalu.lastIndexOf('>') ? ATR : ISI); nama.push(''); }
-    }
-    for (const t of statis) if (t.includes(A) || t.includes(Z)) throw new TypeError('penanda cadangan di bagian statis');
-    susunan.set(s, c = { statis, jenis, nama });
+    for (let i = 0; i < s.length - 1; i++) { lalu += c.statis[i]; golongkan(c, i, lalu); }
+    if (c.statis.some(t => t.includes(A) || t.includes(Z))) throw new TypeError('penanda cadangan di bagian statis');
+    susunan.set(s, c);
     return c;
+  }
+  // jenis nilai ke-i: atribut boolean (?nama="${}": potongan statis di sekitarnya dipangkas), nilai atribut, atau isi elemen
+  function golongkan(c, i, lalu) {
+    const b = c.statis[i].match(/\s\?([a-z-]+)="$/);
+    if (b && c.statis[i + 1][0] === '"') {
+      c.jenis.push(BOOL); c.nama.push(b[1]);
+      c.statis[i] = c.statis[i].slice(0, -b[0].length); c.statis[i + 1] = c.statis[i + 1].slice(1);
+    } else { c.jenis.push(lalu.lastIndexOf('<') > lalu.lastIndexOf('>') ? ATR : ISI); c.nama.push(''); }
   }
   function tulis(tp, o) {
     const c = susun(tp.s);

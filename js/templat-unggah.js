@@ -69,43 +69,40 @@ window.TEMPLAT_UNGGAH = (function () {
   async function sha256(buf) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', buf))].map(x => x.toString(16).padStart(2, '0')).join(''); }
 
   // HTML hasil mammoth diurai DOMParser (dokumen lembam: tidak menjalankan skrip, tidak memuat gambar) lalu diubah ke blok.
-  function teksInline(el) {
-    let s = '';
-    for (const n of el.childNodes) {
-      if (n.nodeType === Node.TEXT_NODE) s += netral(n.data);
-      else if (n.nodeType !== Node.ELEMENT_NODE) continue;
-      else if (n.tagName === 'BR') s += '\n';
-      else if (['IMG', 'SCRIPT', 'STYLE', 'TEMPLATE'].includes(n.tagName)) continue;
-      else {
-        const isi = teksInline(n);
-        if (!isi.trim()) s += isi;
-        else if (n.tagName === 'STRONG' || n.tagName === 'B') s += '**' + isi + '**';
-        else if (n.tagName === 'EM' || n.tagName === 'I') s += '*' + isi + '*';
-        else s += isi;
-      }
-    }
-    return s;
+  const DIBUANG = new Set(['IMG', 'SCRIPT', 'STYLE', 'TEMPLATE']), PENANDA_GAYA = { STRONG: '**', B: '**', EM: '*', I: '*' };
+  function teksSimpul(n) {
+    if (n.nodeType === Node.TEXT_NODE) return netral(n.data);
+    if (n.nodeType !== Node.ELEMENT_NODE || DIBUANG.has(n.tagName)) return '';
+    if (n.tagName === 'BR') return '\n';
+    const isi = teksInline(n), p = PENANDA_GAYA[n.tagName];
+    return p && isi.trim() ? p + isi + p : isi;
   }
-  function dariHtmlDocx(html) {
-    const body = new DOMParser().parseFromString(html, 'text/html').body, blok = [];
-    const daftar = (el, lvl) => [...el.children].filter(li => li.tagName === 'LI').forEach((li, i) => {
+  function teksInline(el) { return [...el.childNodes].map(teksSimpul).join(''); }
+  const teksSel = c => c.children.length ? [...c.children].map(teksInline).join('\n').trim() : teksInline(c).trim();
+  function tabelDocx(el) {
+    const tr = [...el.querySelectorAll('tr')].filter(r => r.closest('table') === el);
+    const rows = tr.map(r => [...r.children].filter(c => c.tagName === 'TD' || c.tagName === 'TH').map(teksSel));
+    return rows.length ? B.TB(rows, !!(tr[0] && tr[0].querySelector('th'))) : null;
+  }
+  function daftarDocx(el, lvl, blok) {
+    [...el.children].filter(li => li.tagName === 'LI').forEach((li, i) => {
       const sub = [...li.children].filter(x => x.tagName === 'UL' || x.tagName === 'OL');
       sub.forEach(x => x.remove());
       const x = teksInline(li).trim();
       if (x) blok.push(B.LI(el.tagName === 'OL' ? `${i + 1}.` : '•', x, lvl));
-      sub.forEach(x2 => daftar(x2, Math.min(2, lvl + 1)));
+      sub.forEach(x2 => daftarDocx(x2, Math.min(2, lvl + 1), blok));
     });
-    for (const el of body.children) {
-      const tag = el.tagName;
-      if (/^H[1-6]$/.test(tag)) { const x = teksInline(el).trim(); if (x) blok.push(tag === 'H1' ? B.HC(x) : B.H(x)); }
-      else if (tag === 'P') { const x = teksInline(el).trim(); if (x) blok.push(B.P(x)); }
-      else if (tag === 'UL' || tag === 'OL') daftar(el, 1);
-      else if (tag === 'TABLE') {
-        const tr = [...el.querySelectorAll('tr')].filter(r => r.closest('table') === el);
-        const rows = tr.map(r => [...r.children].filter(c => c.tagName === 'TD' || c.tagName === 'TH').map(c => [...c.children].length ? [...c.children].map(teksInline).join('\n').trim() : teksInline(c).trim()));
-        if (rows.length) blok.push(B.TB(rows, !!(tr[0] && tr[0].querySelector('th'))));
-      }
-    }
+  }
+  function blokDocx(el, blok) {
+    const tag = el.tagName;
+    if (tag === 'UL' || tag === 'OL') return daftarDocx(el, 1, blok);
+    if (tag === 'TABLE') { const t = tabelDocx(el); if (t) blok.push(t); return; }
+    const x = /^H[1-6]$/.test(tag) || tag === 'P' ? teksInline(el).trim() : '';
+    if (x) blok.push(tag === 'P' ? B.P(x) : tag === 'H1' ? B.HC(x) : B.H(x));
+  }
+  function dariHtmlDocx(html) {
+    const blok = [];
+    for (const el of new DOMParser().parseFromString(html, 'text/html').body.children) blokDocx(el, blok);
     return blok;
   }
   // .txt: baris "# " = judul tengah, "## " = subjudul, "- " = butir, baris kosong memisahkan paragraf.
@@ -122,27 +119,32 @@ window.TEMPLAT_UNGGAH = (function () {
     }
     return blok;
   }
+  async function blokDariDocx(buf) {
+    const b = new Uint8Array(buf);
+    if (!(b[0] === 0x50 && b[1] === 0x4B && b[2] === 0x03 && b[3] === 0x04) || !ada(buf, 'word/document.xml')) throw new Error('bukan berkas Word .docx yang sah');
+    if (ada(buf, 'vbaProject')) throw new Error('berkas memuat makro (vbaProject) — tidak diterima'); // nama entri ZIP tidak terkompresi
+    cekZip(b);
+    if (!window.mammoth) await muatSkrip('vendor/mammoth.browser.min.js');
+    const r = await window.mammoth.convertToHtml({ arrayBuffer: buf }, { convertImage: window.mammoth.images.imgElement(() => ({ src: '' })) });
+    return dariHtmlDocx(r.value);
+  }
+  function blokDariTxt(buf) {
+    let t;
+    try { t = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { throw new Error('berkas .txt harus UTF-8', { cause: e }); }
+    if (/\0/.test(t)) throw new Error('berkas .txt berisi data biner');
+    return dariTeks(t);
+  }
+  function jenisBerkas(berkas) {
+    const ext = (String(berkas.name || '').match(/\.([a-z0-9]+)$/i) || [])[1];
+    const jenis = ext && ext.toLowerCase();
+    if (jenis !== 'docx' && jenis !== 'txt') throw new Error('pakai berkas .docx atau .txt (.docm/.doc/makro tidak diterima)');
+    if (berkas.size > (jenis === 'docx' ? MAKS_DOCX : MAKS_TXT)) throw new Error(`berkas terlalu besar (maks. ${jenis === 'docx' ? '5 MB' : '512 KB'})`);
+    return jenis;
+  }
   async function baca(berkas) {
-    const nama = String(berkas.name || ''), ext = (nama.match(/\.([a-z0-9]+)$/i) || [])[1];
-    if (!ext || !['docx', 'txt'].includes(ext.toLowerCase())) throw new Error('pakai berkas .docx atau .txt (.docm/.doc/makro tidak diterima)');
-    const docx = ext.toLowerCase() === 'docx';
-    if (berkas.size > (docx ? MAKS_DOCX : MAKS_TXT)) throw new Error(`berkas terlalu besar (maks. ${docx ? '5 MB' : '512 KB'})`);
+    const nama = String(berkas.name || ''), jenis = jenisBerkas(berkas), docx = jenis === 'docx';
     const buf = await berkas.arrayBuffer();
-    let blok;
-    if (docx) {
-      const b = new Uint8Array(buf);
-      if (!(b[0] === 0x50 && b[1] === 0x4B && b[2] === 0x03 && b[3] === 0x04) || !ada(buf, 'word/document.xml')) throw new Error('bukan berkas Word .docx yang sah');
-      if (ada(buf, 'vbaProject')) throw new Error('berkas memuat makro (vbaProject) — tidak diterima'); // nama entri ZIP tidak terkompresi
-      cekZip(b);
-      if (!window.mammoth) await muatSkrip('vendor/mammoth.browser.min.js');
-      const r = await window.mammoth.convertToHtml({ arrayBuffer: buf }, { convertImage: window.mammoth.images.imgElement(() => ({ src: '' })) });
-      blok = dariHtmlDocx(r.value);
-    } else {
-      let t;
-      try { t = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { throw new Error('berkas .txt harus UTF-8', { cause: e }); }
-      if (/\0/.test(t)) throw new Error('berkas .txt berisi data biner');
-      blok = dariTeks(t);
-    }
+    const blok = docx ? await blokDariDocx(buf) : blokDariTxt(buf);
     const u = sahkan({ nama: nama.slice(0, 200), jenis: docx ? 'docx' : 'txt', sha256: await sha256(buf), ukuran: berkas.size, diunggah: new Date().toISOString(), blok });
     if (!u || !u.blok.length) throw new Error('template kosong atau tidak terbaca');
     if (JSON.stringify(u).length > MAKS_SIMPAN) throw new Error('isi template terlalu besar untuk disimpan (maks. ±1 MB teks)');
@@ -151,23 +153,29 @@ window.TEMPLAT_UNGGAH = (function () {
 
   // ---------- pengesahan struktur (saat unggah dan setiap database dibaca/dipulihkan) ----------
   const str = (v, maks) => typeof v === 'string' ? v.slice(0, maks) : null;
-  function sahkanBlok(b) {
-    if (!b || typeof b !== 'object') return null;
-    if (['hc', 'h', 'p'].includes(b.t)) { const x = str(b.x, MAKS_TEKS); return x ? { t: b.t, x } : null; }
-    if (b.t === 'li') { const x = str(b.x, MAKS_TEKS), n = str(b.n, 20); return x && n !== null ? { t: 'li', n, x, lvl: b.lvl === 2 ? 2 : 1 } : null; }
-    if (b.t === 'table' && Array.isArray(b.rows)) {
+  const SAHKAN_BLOK = {
+    hc: b => { const x = str(b.x, MAKS_TEKS); return x ? { t: b.t, x } : null; },
+    li: b => { const x = str(b.x, MAKS_TEKS), n = str(b.n, 20); return x && n !== null ? { t: 'li', n, x, lvl: b.lvl === 2 ? 2 : 1 } : null; },
+    table: b => {
+      if (!Array.isArray(b.rows)) return null;
       const rows = b.rows.slice(0, MAKS_BARIS).filter(Array.isArray).map(r => r.slice(0, MAKS_KOLOM).map(c => str(c, 5000) ?? ''));
       return rows.length ? { t: 'table', rows, head: b.head === true } : null;
     }
-    return null;
+  };
+  SAHKAN_BLOK.h = SAHKAN_BLOK.p = SAHKAN_BLOK.hc;
+  function sahkanBlok(b) {
+    const f = b && typeof b === 'object' && Object.prototype.hasOwnProperty.call(SAHKAN_BLOK, b.t) ? SAHKAN_BLOK[b.t] : null;
+    return f ? f(b) : null;
   }
+  const RE_SHA = /^[0-9a-f]{64}$/, RE_WAKTU = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/;
+  const ukuranSah = v => Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0;
+  const waktuSah = v => typeof v === 'string' && RE_WAKTU.test(v) ? v : '';
   function sahkan(u) {
-    if (!u || typeof u !== 'object' || !Array.isArray(u.blok)) return null;
+    if (!u || typeof u !== 'object' || !Array.isArray(u.blok) || typeof u.sha256 !== 'string' || !RE_SHA.test(u.sha256)) return null;
     const blok = u.blok.slice(0, MAKS_BLOK).map(sahkanBlok).filter(Boolean);
-    if (!blok.length || typeof u.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(u.sha256)) return null;
+    if (!blok.length) return null;
     return { nama: str(u.nama, 200) || 'template', jenis: u.jenis === 'docx' ? 'docx' : 'txt', sha256: u.sha256,
-      ukuran: Number.isFinite(u.ukuran) ? Math.max(0, Math.round(u.ukuran)) : 0,
-      diunggah: typeof u.diunggah === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(u.diunggah) ? u.diunggah : '', blok };
+      ukuran: ukuranSah(u.ukuran), diunggah: waktuSah(u.diunggah), blok };
   }
   function sahkanSemua(x, templatSah) {
     const o = {};

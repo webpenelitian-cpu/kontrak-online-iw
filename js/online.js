@@ -95,18 +95,28 @@ async function panelAdmin(user, kurang) {
 }
 
 // ---------- alur masuk ----------
-async function setelahMasuk(user) {
-  pesan(`Masuk sebagai ${user.email}. Memeriksa izin…`);
-  // admin dikenali dari aturan Firestore (hanya admin boleh melihat daftar izin) — tidak ada email admin di situs publik
+// izin akun: admin (dikenali dari aturan Firestore — hanya admin boleh melihat daftar izin; tak ada email admin di situs publik)
+// otomatis dimasukkan ke daftar izin; akun lain harus sudah ada di daftar
+async function periksaIzin(user) {
   const admin = await getDocs(collection(db, 'izin')).then(() => true, () => false);
-  let izin = await getDoc(doc(db, 'izin', user.email)).catch(() => null);
-  if (admin && (!izin || !izin.exists())) { await setDoc(doc(db, 'izin', user.email), { ditambahkan: serverTimestamp(), oleh: user.email }); izin = await getDoc(doc(db, 'izin', user.email)); }
-  if (!izin || !izin.exists()) { pesan(`Akun ${user.email} belum diizinkan memakai aplikasi ini. Hubungi pemilik aplikasi.`); return; }
-  pesan('Memuat aplikasi…');
+  const ada = () => getDoc(doc(db, 'izin', user.email)).then(d => d.exists(), () => false);
+  let izin = await ada();
+  if (admin && !izin) { await setDoc(doc(db, 'izin', user.email), { ditambahkan: serverTimestamp(), oleh: user.email }); izin = await ada(); }
+  return { admin, izin };
+}
+async function muatAwal() { // jumlah konten awal yang gagal dimuat/diverifikasi
   let kurang = 0;
   for (const k of K.konten.filter(x => x.awal)) {
     try { await muatK(k); } catch { kurang++; }
   }
+  return kurang;
+}
+async function setelahMasuk(user) {
+  pesan(`Masuk sebagai ${user.email}. Memeriksa izin…`);
+  const { admin, izin } = await periksaIzin(user);
+  if (!izin) { pesan(`Akun ${user.email} belum diizinkan memakai aplikasi ini. Hubungi pemilik aplikasi.`); return; }
+  pesan('Memuat aplikasi…');
+  const kurang = await muatAwal();
   if (kurang) {
     pesan(admin ? 'Konten aplikasi belum diunggah untuk versi ini.' : 'Aplikasi sedang diperbarui pemiliknya. Coba lagi nanti.');
     if (admin) panelAdmin(user, kurang);
