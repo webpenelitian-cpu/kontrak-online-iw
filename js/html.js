@@ -74,19 +74,18 @@ window.H = (function () {
     if (!Object.isFrozen(s) || !Array.isArray(s.raw)) throw new TypeError('html`` hanya untuk templat bertanda');
     if (s.some(t => t.includes(A) || t.includes(Z) || /&[A-Za-z#]/.test(t))) throw new TypeError('html``: penanda cadangan atau entitas di bagian statis');
     const teks = gabung(s), akar = { anak: [] }, tumpuk = [akar];
-    for (let p = 0; p < teks.length;) {
-      if (teks[p] === '<') { p = bacaTag(teks, p, tumpuk); continue; }
-      const q = teks.indexOf('<', p), akhir = q < 0 ? teks.length : q;
-      const induk = tumpuk[tumpuk.length - 1];
-      // teks langsung di dalam tabel diperlakukan khusus oleh pengurai HTML (dipindah/ditaruh di tbody) — tidak didukung: tolak
-      const potong = bagian(teks.slice(p, akhir));
-      if (KONTEKS_TABEL.has(induk.tag) && potong.some(b => typeof b === 'string')) throw new SyntaxError(`html\`\`: teks langsung di dalam <${induk.tag}>`);
-      induk.anak.push({ teks: potong });
-      p = akhir;
-    }
+    for (let p = 0; p < teks.length;) p = teks[p] === '<' ? bacaTag(teks, p, tumpuk) : bacaTeks(teks, p, tumpuk);
     if (tumpuk.length !== 1) throw new SyntaxError(`html\`\`: <${tumpuk[tumpuk.length - 1].tag}> tidak ditutup`);
     cetakan.set(s, c = akar.anak);
     return c;
+  }
+  function bacaTeks(teks, p, tumpuk) {
+    const q = teks.indexOf('<', p), akhir = q < 0 ? teks.length : q;
+    const induk = tumpuk[tumpuk.length - 1], potong = bagian(teks.slice(p, akhir));
+    // teks langsung di dalam tabel diperlakukan khusus oleh pengurai HTML (dipindah/ditaruh di tbody) — tidak didukung: tolak
+    if (KONTEKS_TABEL.has(induk.tag) && potong.some(b => typeof b === 'string')) throw new SyntaxError(`html\`\`: teks langsung di dalam <${induk.tag}>`);
+    induk.anak.push({ teks: potong });
+    return akhir;
   }
 
   // ---------- pembangunan DOM ----------
