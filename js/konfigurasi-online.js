@@ -18,67 +18,67 @@ window.KONTRAK_ONLINE = {
   {
    "id": "f4ceafaa085bf9d9c455",
    "jenis": "js",
-   "sha256": "04e68b9c79ee510c1c979f22ef767454b46021a3f21f7a8d42ac4f9462467d09",
+   "sha256": "421e4796f4acba7a2d3d8a434c653cff7fb5e4aea72ec93191c107eee0d4ad3c",
    "awal": true
   },
   {
    "id": "dc9059c10b7955b6d9cb",
    "jenis": "js",
-   "sha256": "86da31dca19c6c41c1e907eb3145f25967704049eeb0b80ad9078b29a44e0887",
+   "sha256": "222db8feabed48c556bfe8e09d30088bdde49fd14e59ca9a1d92db4e2d23b3c7",
    "awal": true
   },
   {
    "id": "ee4b1e880b226a28e9a9",
    "jenis": "js",
-   "sha256": "242c6b913e2432193b8d1e75f2f18ddca35aaa89f6547ad5e5aa43818c2304ef",
-   "awal": true
+   "sha256": "ff9e7b84dfd92b3fc8c3ec7a2de572ae25591894b34231ff6d77de5e0f6f0dac",
+   "awal": false
   },
   {
    "id": "ddd81f97610423bf6c10",
    "jenis": "js",
-   "sha256": "3ba88d537b6907dacbed8c3a653cefc673fb4d91b47be2e8fcfc3fd23beeaf44",
-   "awal": true
+   "sha256": "e4b31c9b35d71c79e9baf97b4373e6cb7d575050e4924579143fdb029eb24375",
+   "awal": false
   },
   {
    "id": "9b3bd1464f02e6945e47",
    "jenis": "js",
-   "sha256": "cfcbb1e1000565bb5b7c8050e9774006de6b77e2d90f0d734c11409a5d042925",
-   "awal": true
+   "sha256": "8088b139eaa3c4c373c2487f9b38c9a414a85e7e54dd2220271465a3214715b9",
+   "awal": false
   },
   {
    "id": "4a764c75ae30470b19c9",
    "jenis": "js",
-   "sha256": "de2bd116ea35d606103614e5239e629d9faece28d3bff2a24478dc24b0f7161d",
-   "awal": true
+   "sha256": "0d808a80447228b7f5a87f7fd8ac27f2855d55ed668228e43449e6a09a3e906e",
+   "awal": false
   },
   {
    "id": "647c6f4cb4f465b8aacd",
    "jenis": "js",
-   "sha256": "5b415caa8e81a02c86451ecbcbb79a1df31d2232ee39d47ff60903f0751fa9e5",
-   "awal": true
+   "sha256": "1fd102cc2c7cb12adf3937948b1db223a59f6f412736e7bf9392cd2a252c2454",
+   "awal": false
   },
   {
    "id": "b5c2f9f3048ec498e3d5",
    "jenis": "js",
-   "sha256": "921787453fc02c76dd14ab2a90cfc0abed59ed3c80606d96187bc7faa18b8864",
-   "awal": true
+   "sha256": "674cc00be5f6e8e0c6bad5aa64a4f262d9094389b66dce38f92631486ea4d264",
+   "awal": false
   },
   {
    "id": "562d66f809d205874636",
    "jenis": "js",
-   "sha256": "911dcd920691cef1830c2982b84f16d05aeb6a95f7b6c61be3ad1f18dab0af24",
-   "awal": true
+   "sha256": "5646f3b708ed4c6568ca8afaeeae1ef795d9911e648892c69a1841c0af487dd1",
+   "awal": false
   },
   {
    "id": "a5e4f4f8fca79db7036c",
    "jenis": "js",
-   "sha256": "d65da94face5fc939e32fca085ac50a181300d1e156c86b8b7e046faa1df77b3",
+   "sha256": "1c901a78c3c905d128de7a505ddc8f74c1ac015fe8a7ca81470db0f25956fcc2",
    "awal": true
   },
   {
    "id": "0d3607ed50d634bc25e2",
    "jenis": "js",
-   "sha256": "9c109db8d36ada0e1b7fad0fff2c82721ecd457286b5b57dcc47b42de5ee16b0",
+   "sha256": "8d2de5e254f19563de7178534c8441ea2e59fe22033e1066eb404f144d8cadf6",
    "awal": true
   },
   {

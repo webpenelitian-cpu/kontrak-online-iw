@@ -2,36 +2,76 @@
    .docx dirakit sebagai ZIP tanpa kompresi (metode "stored") + CRC-32. */
 'use strict';
 window.RENDER = (function () {
-  const { esc } = U;
 
-  // ---------- HTML ----------
-  function inl(s) {
-    return esc(s)
-      .replace(/__(.+?)__/g, '<u>$1</u>')
-      .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
-      .replace(/\*([^*]+?)\*/g, '<i>$1</i>')
-      .replace(/\n/g, '<br>')
-      .replace(/\[•\]/g, '<span class="ph">[•]</span>');
+
+  // ---------- naskah → templat html`` (DOM aman lewat H.pasang; teks HTML lewat H.keString) ----------
+  // Penanda format naskah: __garis bawah__, **tebal**, *miring*, baris baru, [•] (isian kosong). Aturannya sama dengan versi string
+  // lama (regex yang sama, urutan yang sama, atas teks mentah — U.esc tidak menambah/menghapus * _ atau baris baru), tetapi hasilnya
+  // pohon templat, bukan string HTML. Tanda tutup yang bersilang (mis. **a __b** c__) ditata ulang seperti pengurai HTML (elemen
+  // format yang masih terbuka ditutup lalu dibuka lagi), sehingga DOM sama dengan hasil lama.
+  const { html } = H;
+  const M = ['', '', '', '']; // buka, tutup, baris baru, isian kosong (karakter privat; dari data dinetralkan)
+  const RE_PENANDA = /[-]/g;
+  const SUSUN_FORMAT = { u: c => html`<u>${c}</u>`, b: c => html`<b>${c}</b>`, i: c => html`<i>${c}</i>` };
+  function tandai(s) {
+    return String(s).replace(RE_PENANDA, '\uFFFD')
+      .replace(/__(.+?)__/g, `${M[0]}u$1${M[1]}u`)
+      .replace(/\*\*(.+?)\*\*/g, `${M[0]}b$1${M[1]}b`)
+      .replace(/\*([^*]+?)\*/g, `${M[0]}i$1${M[1]}i`)
+      .replace(/\n/g, M[2])
+      .replace(/\[•\]/g, M[3]);
   }
-  const adjAttr = b => b.adj ? ` data-adj="1" title="${esc(b.adj)}"` : '';
-  function keHTML(blocks) {
-    return blocks.map(b => {
-      const A = adjAttr(b), ac = b.adj ? ' adj' : '';
-      switch (b.t) {
-        case 'hc': return `<p class="hc">${inl(b.x)}</p>`;
-        case 'pc': return `<p class="c">${inl(b.x)}</p>`;
-        case 'h': return `<h3>${inl(b.x)}</h3>`;
-        case 'p': return `<p class="j${ac}"${A}>${inl(b.x)}</p>`;
-        case 'li': return `<div class="li l${b.lvl || 1}${ac}"${A}><span>${inl(b.n)}</span><span>${inl(b.x)}</span></div>`;
-        case 'kv': return `<table class="kv${b.n ? ' n' : ''}">${b.rows.map((r, i) => `<tr>${b.n ? `<td>${i ? '' : inl(b.n)}</td>` : ''}<td>${inl(r[0])}</td><td>:</td><td>${inl(r[1])}</td></tr>`).join('')}</table>`;
-        case 'table': return `<table class="grid">${b.rows.map((r, ri) => `<tr>${r.map(c => (b.head && ri === 0) ? `<th>${inl(c)}</th>` : `<td>${inl(c)}</td>`).join('')}</tr>`).join('')}</table>`;
-        case 'sign': return `<table class="sign"><tr>${b.cols.map(c => `<td>${inl(c[0])}</td>`).join('')}</tr><tr>${b.cols.map(() => '<td class="gap"></td>').join('')}</tr><tr>${b.cols.map(c => `<td><b><u>${inl(c[1])}</u></b>${c[2] ? '<br>' + inl(c[2]) : ''}</td>`).join('')}</tr></table>`;
-        case 'paraf': return `<table class="paraf"><tr>${b.cols.map(c => `<th>${inl(c)}</th>`).join('')}</tr><tr>${b.cols.map(() => '<td></td>').join('')}</tr></table>`;
-        case 'pb': return '<hr class="pb">';
-        default: return '';
-      }
-    }).join('');
+  // tumpukan elemen format terbuka: [{ tag, isi: [] }]; akar = { isi: [] }
+  // elemen yang dibuka ulang tetapi tetap kosong tidak ditulis: pengurai membangunnya kembali hanya bila ada isi berikutnya
+  const tutupFormat = (tumpuk, n) => { const e = tumpuk.pop(); if (!(e.ulang && !e.isi.length)) tumpuk[tumpuk.length - 1].isi.push(SUSUN_FORMAT[e.tag](e.isi)); return n; };
+  function akhiriFormat(tumpuk, tag) { // tutup tag; elemen format di atasnya ditutup lalu dibuka kembali (aturan "adoption agency")
+    const k = tumpuk.map(e => e.tag).lastIndexOf(tag);
+    if (k < 1) return; // tanda tutup tanpa pasangan: diabaikan seperti tag penutup liar
+    const atas = tumpuk.slice(k + 1).map(e => e.tag);
+    while (tumpuk.length > k) tutupFormat(tumpuk);
+    for (const t of atas) tumpuk.push({ tag: t, isi: [], ulang: true });
   }
+  function tokenFormat(tumpuk, t, p) {
+    const isi = () => tumpuk[tumpuk.length - 1].isi;
+    if (t[p] === M[0]) { tumpuk.push({ tag: t[p + 1], isi: [] }); return p + 2; }
+    if (t[p] === M[1]) { akhiriFormat(tumpuk, t[p + 1]); return p + 2; }
+    if (t[p] === M[2]) { isi().push(html`<br>`); return p + 1; }
+    if (t[p] === M[3]) { isi().push(html`<span class="ph">[•]</span>`); return p + 1; }
+    const q = t.slice(p).search(RE_PENANDA), akhir = q < 0 ? t.length : p + q;
+    isi().push(html`${t.slice(p, akhir)}`); // teks dibungkus templat: daftar campuran tetap dikenali sebagai daftar templat
+    return akhir;
+  }
+  const ADA_FORMAT = /[*_\n[]/;
+  function inlT(s) {
+    if (!ADA_FORMAT.test(s)) return String(s).replace(RE_PENANDA, '\uFFFD'); // jalur tersering: teks polos (karakter penanda privat dinetralkan seperti jalur format)
+    const t = tandai(s), akar = { isi: [] }, tumpuk = [akar];
+    for (let p = 0; p < t.length;) p = tokenFormat(tumpuk, t, p);
+    while (tumpuk.length > 1) tutupFormat(tumpuk);
+    return akar.isi;
+  }
+  const inl = s => H.keString(inlT(s));
+  const pAdj = (b, kelas, isi) => b.adj ? html`<p class="${kelas} adj" data-adj="1" title="${b.adj}">${isi}</p>` : html`<p class="${kelas}">${isi}</p>`;
+  const liAdj = (b, isi) => b.adj ? html`<div class="li l${b.lvl || 1} adj" data-adj="1" title="${b.adj}">${isi}</div>` : html`<div class="li l${b.lvl || 1}">${isi}</div>`;
+  const selKV = (b, r, i) => html`<tr>${b.n ? html`<td>${i ? '' : inlT(b.n)}</td>` : ''}<td>${inlT(r[0])}</td><td>:</td><td>${inlT(r[1])}</td></tr>`;
+  const selGrid = (b, r, ri) => html`<tr>${r.map(c => (b.head && ri === 0) ? html`<th>${inlT(c)}</th>` : html`<td>${inlT(c)}</td>`)}</tr>`;
+  // templat per jenis blok naskah (satu fungsi kecil per jenis; jenis tak dikenal = kosong)
+  const HTML_BLOK = {
+    hc: b => html`<p class="hc">${inlT(b.x)}</p>`,
+    pc: b => html`<p class="c">${inlT(b.x)}</p>`,
+    h: b => html`<h3>${inlT(b.x)}</h3>`,
+    p: b => pAdj(b, 'j', inlT(b.x)),
+    li: b => liAdj(b, html`<span>${inlT(b.n)}</span><span>${inlT(b.x)}</span>`),
+    kv: b => html`<table class="${b.n ? 'kv n' : 'kv'}">${b.rows.map((r, i) => selKV(b, r, i))}</table>`,
+    table: b => html`<table class="grid">${b.rows.map((r, ri) => selGrid(b, r, ri))}</table>`,
+    sign: b => html`<table class="sign"><tr>${b.cols.map(c => html`<td>${inlT(c[0])}</td>`)}</tr><tr>${b.cols.map(() => html`<td class="gap"></td>`)}</tr><tr>${b.cols.map(c => html`<td><b><u>${inlT(c[1])}</u></b>${c[2] ? html`<br>${inlT(c[2])}` : ''}</td>`)}</tr></table>`,
+    paraf: b => html`<table class="paraf"><tr>${b.cols.map(c => html`<th>${inlT(c)}</th>`)}</tr><tr>${b.cols.map(() => html`<td></td>`)}</tr></table>`,
+    pb: () => html`<hr class="pb">`
+  };
+  const perJenis = (tabel, b, ...arg) => Object.hasOwn(tabel, b.t) ? tabel[b.t](b, ...arg) : '';
+  /** Naskah sebagai daftar templat html`` (dipasang ke #sheet dengan H.pasang — tanpa pengurai HTML). */
+  function keTemplat(blocks) { return blocks.map(b => perJenis(HTML_BLOK, b)); }
+  /** Naskah sebagai teks HTML (sidik/ekspor) — diturunkan dari templat yang sama. */
+  function keHTML(blocks) { return H.keString(keTemplat(blocks)); }
 
   // ---------- DOCX ----------
   const xe = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -78,22 +118,21 @@ window.RENDER = (function () {
       rows.map((r, ri) => `<w:tr>${r.map((c, ci) => `<w:tc><w:tcPr><w:tcW w:w="${w ? w[ci] : 0}" w:type="${w ? 'dxa' : 'auto'}"/></w:tcPr>${String(c).split('\n').map(line => para(line, { bold: o.head && ri === 0, center: o.center, size: o.size, sorot: o.sorot })).join('') || para('')}</w:tc>`).join('')}</w:tr>`).join('') +
       `</w:tbl>${para('')}`;
   }
+  // WordprocessingML per jenis blok naskah (S = opsi bersama {sorot}, k = kertas)
+  const DOCX_BLOK = {
+    hc: (b, S) => para(b.x, { ...S, center: true, bold: true, before: /^PASAL /.test(b.x) ? 240 : 0, keep: true }),
+    pc: (b, S) => para(b.x, { ...S, center: true }),
+    h: (b, S) => para(b.x, { ...S, bold: true, before: 160, keep: true }),
+    p: (b, S, k) => para(b.x, { ...S, justify: true, ind: k.ind || 0, after: 60 }),
+    li: (b, S, k) => para(`${b.n}\t${b.x}`, { ...S, justify: true, ind: (k.ind || 0) + (b.lvl === 2 ? 402 + 284 : 427), hang: b.lvl === 2 ? 284 : 427, after: 40 }),
+    kv: (b, S, k) => b.n ? tbl(b.rows.map((r, i) => [i ? '' : b.n, r[0], ':', r[1]]), { ...S, indent: k.ind || 0 }) : tbl(b.rows.map(r => [r[0], ':', r[1]]), { ...S, indent: 427 }),
+    table: (b, S, k) => tbl(b.rows, { ...S, garis: true, head: b.head, pct: true, size: k.size - 4 }),
+    sign: (b, S) => tbl([b.cols.map(c => c[0]), b.cols.map(() => '\n\n\n'), b.cols.map(c => `**__${c[1]}__**${c[2] ? '\n' + c[2] : ''}`)], { ...S, center: true, pct: true }),
+    pb: () => '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'
+  };
   function keDocXML(blocks, k, sorot) {
     const S = { sorot };
-    const body = blocks.map(b => {
-      switch (b.t) {
-        case 'hc': return para(b.x, { ...S, center: true, bold: true, before: /^PASAL /.test(b.x) ? 240 : 0, keep: true });
-        case 'pc': return para(b.x, { ...S, center: true });
-        case 'h': return para(b.x, { ...S, bold: true, before: 160, keep: true });
-        case 'p': return para(b.x, { ...S, justify: true, ind: k.ind || 0, after: 60 });
-        case 'li': return para(`${b.n}\t${b.x}`, { ...S, justify: true, ind: (k.ind || 0) + (b.lvl === 2 ? 402 + 284 : 427), hang: b.lvl === 2 ? 284 : 427, after: 40 });
-        case 'kv': return b.n ? tbl(b.rows.map((r, i) => [i ? '' : b.n, r[0], ':', r[1]]), { ...S, indent: k.ind || 0 }) : tbl(b.rows.map(r => [r[0], ':', r[1]]), { ...S, indent: 427 });
-        case 'table': return tbl(b.rows, { ...S, garis: true, head: b.head, pct: true, size: k.size - 4 });
-        case 'sign': return tbl([b.cols.map(c => c[0]), b.cols.map(() => '\n\n\n'), b.cols.map(c => `**__${c[1]}__**${c[2] ? '\n' + c[2] : ''}`)], { ...S, center: true, pct: true });
-        case 'pb': return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
-        default: return '';
-      }
-    }).join('');
+    const body = blocks.map(b => perJenis(DOCX_BLOK, b, S, k)).join('');
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body}<w:sectPr><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="${k.w}" w:h="${k.h}"${k.w > k.h ? ' w:orient="landscape"' : ''}/><w:pgMar w:top="${k.top}" w:right="${k.right}" w:bottom="${k.bottom}" w:left="${k.left}" w:header="709" w:footer="${k.footer}" w:gutter="0"/></w:sectPr></w:body></w:document>`;
   }
   function keFooterXML(blocks) {
@@ -147,5 +186,5 @@ window.RENDER = (function () {
     ];
   }
   const docx = (blocks, kertas, judul, sorot) => zip(berkasDocx(blocks, kertas, judul, sorot));
-  return { keHTML, docx, berkasDocx, zip, crc32, inl };
+  return { keHTML, keTemplat, docx, berkasDocx, zip, crc32, inl };
 })();

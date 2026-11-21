@@ -42,19 +42,19 @@ window.U = (function () {
 
   // ---- angka ----
   const S = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+  // satuan besar: [batas atas (eksklusif), pembagi, nama]; nilai ≥ 1e15 (atau bukan angka) ditulis apa adanya
+  const SKALA_TB = [[1e6, 1000, ' ribu'], [1e9, 1e6, ' juta'], [1e12, 1e9, ' miliar'], [1e15, 1e12, ' triliun']];
+  const sisaTb = x => (x ? ' ' + tb(x) : '');
   function tb(n) {
     n = Math.floor(n);
     if (n < 12) return S[n];
     if (n < 20) return tb(n - 10) + ' belas';
-    if (n < 100) return tb(n / 10) + ' puluh' + (n % 10 ? ' ' + tb(n % 10) : '');
-    if (n < 200) return 'seratus' + (n - 100 ? ' ' + tb(n - 100) : '');
-    if (n < 1000) return tb(n / 100) + ' ratus' + (n % 100 ? ' ' + tb(n % 100) : '');
-    if (n < 2000) return 'seribu' + (n - 1000 ? ' ' + tb(n - 1000) : '');
-    if (n < 1e6) return tb(n / 1000) + ' ribu' + (n % 1000 ? ' ' + tb(n % 1000) : '');
-    if (n < 1e9) return tb(n / 1e6) + ' juta' + (n % 1e6 ? ' ' + tb(n % 1e6) : '');
-    if (n < 1e12) return tb(n / 1e9) + ' miliar' + (n % 1e9 ? ' ' + tb(n % 1e9) : '');
-    if (n < 1e15) return tb(n / 1e12) + ' triliun' + (n % 1e12 ? ' ' + tb(n % 1e12) : '');
-    return String(n);
+    if (n < 100) return tb(n / 10) + ' puluh' + sisaTb(n % 10);
+    if (n < 200) return 'seratus' + sisaTb(n - 100);
+    if (n < 1000) return tb(n / 100) + ' ratus' + sisaTb(n % 100);
+    if (n < 2000) return 'seribu' + sisaTb(n - 1000);
+    const s = SKALA_TB.find(x => n < x[0]);
+    return s ? tb(n / s[1]) + s[2] + sisaTb(n % s[1]) : String(n);
   }
   const terbilangAngka = n => { n = Math.round(Number(n) || 0); return n ? tb(n).trim() : 'nol'; };
   const kapital = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
