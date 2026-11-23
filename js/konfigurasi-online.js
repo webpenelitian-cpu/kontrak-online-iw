@@ -24,7 +24,7 @@ window.KONTRAK_ONLINE = {
   {
    "id": "dc9059c10b7955b6d9cb",
    "jenis": "js",
-   "sha256": "222db8feabed48c556bfe8e09d30088bdde49fd14e59ca9a1d92db4e2d23b3c7",
+   "sha256": "b375651095db2992b0e8d829d5cfa48a3ae8077162018933e5d46fc395239340",
    "awal": true
   },
   {
@@ -66,7 +66,7 @@ window.KONTRAK_ONLINE = {
   {
    "id": "562d66f809d205874636",
    "jenis": "js",
-   "sha256": "5646f3b708ed4c6568ca8afaeeae1ef795d9911e648892c69a1841c0af487dd1",
+   "sha256": "67940200c6e5389149d2748df5872d195d84a990faeec2cddb38740b81d5b277",
    "awal": false
   },
   {
@@ -78,7 +78,7 @@ window.KONTRAK_ONLINE = {
   {
    "id": "0d3607ed50d634bc25e2",
    "jenis": "js",
-   "sha256": "8d2de5e254f19563de7178534c8441ea2e59fe22033e1066eb404f144d8cadf6",
+   "sha256": "1f1289d31c2238b108d59191042597ec3085b857c60d41877199edae36acc000",
    "awal": true
   },
   {

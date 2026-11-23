@@ -73,6 +73,12 @@ window.U = (function () {
   // isian pengguna tidak boleh membawa penanda format (**, *) agar tidak mengubah tampilan naskah
   // (termasuk __garis bawah__: "__" disisipi spasi nol-lebar agar tidak menjadi penanda)
   const bersih = s => String(s ?? '').replace(/\*/g, '∗').replace(/_(?=_)/g, '_​').trim();
+  // Penanda versi untuk aset yang dimuat belakangan (situs online: <meta name="versi-aset"> = hash isi JS/CSS dari alat/bangun_online.js),
+  // agar setelah terbit peramban tidak memakai salinan lama dari cache GitHub Pages (max-age 600). Lokal (file://): tanpa meta, tanpa ?v=.
+  const urlAset = src => {
+    const m = typeof document !== 'undefined' && document.querySelector('meta[name="versi-aset"]');
+    return m && m.content ? `${src}?v=${encodeURIComponent(m.content)}` : src;
+  };
 
   // ---- blok ----
   const B = {
@@ -82,5 +88,5 @@ window.U = (function () {
   };
 
   return { BLN, HARI, ROMAWI, PH, pd, iso, tglD, hariTglD, angkaD, addM, addD, diffMD, masaInklusif, akhirMasa, hariKerjaSetelah,
-    tb, terbilangAngka, terbilangRp, kapital, judulKata, rp, ribuan, angkaTb, num, esc, bersih, B };
+    tb, terbilangAngka, terbilangRp, kapital, judulKata, rp, ribuan, angkaTb, num, esc, bersih, urlAset, B };
 })();

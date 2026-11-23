@@ -40,7 +40,7 @@ window.TEMPLAT_UNGGAH = (function () {
 
   // ---------- membaca berkas ----------
   const muatSkrip = (() => { const sudah = {}; return src => sudah[src] || (sudah[src] = new Promise((ok, gagal) => {
-    const s = document.createElement('script'); s.src = src;
+    const s = document.createElement('script'); s.src = U.urlAset(src);
     s.onload = ok; s.onerror = () => { delete sudah[src]; gagal(new Error('gagal memuat ' + src)); };
     document.head.appendChild(s);
   })); })();
